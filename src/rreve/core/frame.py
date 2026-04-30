@@ -41,6 +41,7 @@ class Frame:
     frame_id: int
     nodes: List[Node]
     lattice: np.ndarray
+    _lattice_str: str
     nodes_data: NodesData = field(default_factory=NodesData)
     _data: Dict[str, np.ndarray] | None = None
     _settings: Settings = field(default_factory=Settings)
@@ -162,6 +163,10 @@ class Frame:
     def get_nodes(self) -> List[Node]:
         """Get the nodes of the frame"""
         return self.nodes
+
+    def get_num_nodes(self) -> int:
+        """Get the number of nodes"""
+        return len(self.nodes)
 
     def __len__(self) -> int:
         """Get the number of nodes in the frame"""

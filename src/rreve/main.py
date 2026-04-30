@@ -5,6 +5,8 @@ from datetime import datetime
 import psutil
 import uuid
 import time
+import shutil
+from colorama import Fore, Style
 
 from .config.settings import Settings
 from .io.reader.reader_factory import ReaderFactory
@@ -53,6 +55,26 @@ def main(settings: Settings):
     reader.set_verbose(settings.verbose)
     system = System(reader, settings)
     scan_end = time.time()
+
+    # Initialize XYZDecorator
+    if settings.decorate_input_file:
+        destination_dir = os.path.join(settings.export_directory,'decorated_input_files')
+        if not os.path.exists(destination_dir):
+            os.makedirs(destination_dir)
+        else:
+            files_found = os.listdir(destination_dir)
+
+            if len(files_found) != 0 and settings.verbose:
+                for fil in files_found:
+                    os.remove(os.path.join(destination_dir,fil))
+                message = (
+                    Fore.LIGHTRED_EX
+                    + rf"""
+   Deleted {len(files_found)} file(s) in decorated_input_file directory.
+"""
+                    + Style.RESET_ALL
+                )
+                print(message)
 
     # Track reader initialization performance
     perf.add_metric("scan_trajectory_time_ms", (scan_end - scan_start) * 1000)
@@ -126,6 +148,11 @@ def main(settings: Settings):
         frame_times.append((frame_end - frame_start) * 1000)
 
         number_nodes.append(len(frame))
+
+        # XYZ decorator
+        if settings.decorate_input_file:
+            dec_writer = WriterFactory(settings).get_writer("XYZDecorator")
+            dec_writer.write(frame)
 
         del frame
 

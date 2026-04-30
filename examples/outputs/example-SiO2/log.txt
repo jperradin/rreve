@@ -24,6 +24,7 @@ __version__ ➜  0.0.1
 	|- verbose: True
 	|- save_logs: True
 	|- save_performance: True
+	|- decorate_input_file: True
 	|- coordination_mode: different_type
 	|- cutoffs:
 		Si-Si : distance = 3.5
@@ -39,6 +40,10 @@ __version__ ➜  0.0.1
         Analysis Settings:
         -----------------
 		|- overwrite: True
+		|- with_structural_units: True
+		  |- strunits_settings:
+		    |- units_to_calculate = 
+		    ['SiO4', 'SiO5', 'SiO6', 'SiO7', 'OSi1', 'OSi2', 'OSi3', 'OSi4']
 		|- with_polyhedricity: True
 		  |- poly_settings:
 		    |- central_species = Si

@@ -1,6 +1,6 @@
 # Import necessary modules
-from reve import SettingsBuilder, main
-import reve.config.settings as c
+from rreve import SettingsBuilder, main
+import rreve.config.settings as c
 
 # Path to the trajectory file
 # path = "./examples/inputs/example-SiO2-1008at.xyz"
@@ -17,6 +17,7 @@ config_general = c.GeneralSettings(
     verbose=True,  # Verbose mode (if True, print title, progress bars, etc.)
     save_logs=True,  # Save logs    (save logs to export_directory/logs.txt)
     save_performance=True,  # Save performance (save performance data to export_directory/performance...json)
+    decorate_input_file=True,
     cutoffs=[
         c.Cutoff("Si", "Si", 3.50),
         c.Cutoff("Si", "O", 2.30),
@@ -35,6 +36,7 @@ config_lattice = c.LatticeSettings(
 config_analysis = c.AnalysisSettings(
     with_all=False,
     with_polyhedricity=True,
+    with_structural_units=True,
 )
 
 # config_analysis.exclude_analyzer("neutron_structure_factor_fft")

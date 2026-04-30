@@ -1,8 +1,7 @@
 import os
 from dataclasses import dataclass, field
 import numpy as np
-from typing import Callable, Tuple, Optional, List
-
+from typing import Callable, Tuple, Optional, List, Set
 
 @dataclass
 class PDFAnalysisSettings:
@@ -141,14 +140,12 @@ class GeneralSettings:
     save_logs: bool = False
     # Whether to save performance
     save_performance: bool = False
+    # Wheter to decorate inputs files with analysis outputs
+    decorate_input_file: bool = False
     # Cutoffs for distance
     cutoffs: List[Cutoff] = field(default_factory=lambda: [])
     # Coordination mode
     coordination_mode: str = "all_types"
-
-
-from dataclasses import dataclass, field
-from typing import Optional, List, Set
 
 
 @dataclass
@@ -497,6 +494,7 @@ class Settings:
     verbose: bool = False
     save_logs: bool = False
     save_performance: bool = False
+    decorate_input_file: bool = False # NOTE: beta features works only with extended XYZ file format.
     coordination_mode: str = "all_types"
     general: GeneralSettings = field(default_factory=GeneralSettings)
     cutoffs: List[Cutoff] = field(default_factory=lambda: [])
@@ -592,6 +590,8 @@ class SettingsBuilder:
             self._settings.save_logs = general.save_logs
         if general.save_performance is not None:
             self._settings.save_performance = general.save_performance
+        if general.decorate_input_file is not None:
+            self._settings.decorate_input_file = general.decorate_input_file
         return self
 
     def with_analysis(self, analysis: AnalysisSettings):

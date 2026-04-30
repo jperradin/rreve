@@ -9,7 +9,7 @@ from ...core.frame import Frame
 from ...config.settings import Settings
 
 FrameIndex = namedtuple(
-    "FrameIndex", ["frame_id", "num_nodes", "lattice", "byte_offset"]
+    "FrameIndex", ["frame_id", "num_nodes", "lattice", "byte_offset", "raw_lattice"]
 )
 
 
@@ -81,6 +81,7 @@ class XYZReader(BaseReader):
                         frame_id=self.num_frames,
                         num_nodes=num_nodes,
                         lattice=lattice,
+                        raw_lattice=lattice_str,
                         byte_offset=frame_start_offset,
                     )
                     self.frame_indices.append(frame_index)
@@ -125,6 +126,7 @@ class XYZReader(BaseReader):
 
             num_nodes = frame_index.num_nodes
             lattice = frame_index.lattice
+            lattice_str = frame_index.raw_lattice
 
             # Skip 2 header lines
             f.readline()
@@ -151,6 +153,7 @@ class XYZReader(BaseReader):
                 frame_id=frame_id,
                 _data=data,
                 lattice=lattice,
+                _lattice_str=lattice_str,
                 nodes=[],
                 _settings=self._settings,
             )

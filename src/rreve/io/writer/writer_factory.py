@@ -3,6 +3,7 @@ from .base_writer import BaseWriter
 from .logs_writer import LogsWriter
 from .performance_writer import PerformanceWriter
 from .multiple_files_summary_writer import MultipleFilesSummaryWriter
+from .xyz_decorator import XYZDecorator
 from ...config.settings import Settings
 
 # TODO: finish implementation of writers
@@ -23,6 +24,7 @@ class WriterFactory:
         self.register_writer(LogsWriter)
         self.register_writer(PerformanceWriter)
         self.register_writer(MultipleFilesSummaryWriter)
+        self.register_writer(XYZDecorator)
 
     def register_writer(self, writer: BaseWriter):
         """Registers a new writer instance."""
@@ -38,6 +40,8 @@ class WriterFactory:
             return PerformanceWriter(self._settings)
         elif name == "MultipleFilesSummaryWriter":
             return MultipleFilesSummaryWriter(self._settings, mode)
+        elif name == "XYZDecorator":
+            return XYZDecorator(self._settings)
         else:
             return None
 

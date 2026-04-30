@@ -1,3 +1,31 @@
+Metadata-Version: 2.4
+Name: rreve
+Version: 0.0.1
+Summary: RReve is a toolkit for structural analysis.
+Author-email: jperradin <julien.perradin@protonmail.fr>
+License: MIT
+Project-URL: Homepage, https://github.com/jperradin/nexus
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Science/Research
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Scientific/Engineering :: Physics
+Classifier: Topic :: Scientific/Engineering :: Chemistry
+Classifier: Topic :: Scientific/Engineering :: Mathematics
+Classifier: Topic :: Scientific/Engineering :: Visualization
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: numpy>=1.20.0
+Requires-Dist: tqdm>=4.50.0
+Requires-Dist: colorama>=0.4.4
+Requires-Dist: numba>=0.53.0
+Requires-Dist: psutil>=5.8.0
+Dynamic: license-file
+
 ```text                                                                
 ____/\\\\\\\\\________/\\\\\\\\\_________________________________________________        
  __/\\\///////\\\____/\\\///////\\\_______________________________________________       

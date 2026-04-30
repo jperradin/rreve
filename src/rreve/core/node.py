@@ -414,6 +414,7 @@ class Node:
     mass: Optional[float] = field(default=None, compare=True, repr=True)
     correlation_length: Optional[float] = field(default=None, compare=True, repr=True)
     coordination: Optional[int] = field(default=None, compare=True, repr=True)
+    polyhedricity: Optional[int] = field(default=-1, compare=True, repr=True)
     form: Optional[str] = field(default=None, compare=False, repr=False)
     _ovito_selection_str: Optional[str] = field(default=None, compare=False, repr=False)
 
@@ -470,6 +471,9 @@ class Node:
 
     def set_coordination(self, coordination: int) -> None:
         self.coordination = coordination
+
+    def set_polyhedricity(self, polyhedricity: float) -> None:
+        self.polyhedricity = polyhedricity 
 
     def get_neighbors_positions_by_element(self, element: str) -> np.ndarray:
         n_positions = np.array(

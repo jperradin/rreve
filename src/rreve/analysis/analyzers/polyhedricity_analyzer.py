@@ -202,6 +202,7 @@ class PolyhedricityAnalyzer(BaseAnalyzer):
                 self._hist_4_fold[bin_idx1] += 1
                 self.counts["4_fold"] += 1
                 node.form = "4"
+                node.polyhedricity = m
                 if self.calculate_distribution:
                     # Distances center-vertices
                     for r in distances_cv:
@@ -235,11 +236,13 @@ class PolyhedricityAnalyzer(BaseAnalyzer):
                     self._hist_5_fold[bin_idx1] += 1
                     self._hist_sbp_pentahedricity[bin_idx1] += 1
                     node.form = "5p"
+                    node.polyhedricity = m
                 else:
                     self.counts["5_fold_tbp"] += 1
                     self._hist_5_fold[bin_idx2] += 1
                     self._hist_tbp_pentahedricity[bin_idx2] += 1
                     node.form = "5b"
+                    node.polyhedricity = n
                 if self.calculate_distribution:
                     # Distances center-vertices
                     for r in distances_cv:
@@ -265,6 +268,7 @@ class PolyhedricityAnalyzer(BaseAnalyzer):
                 self.counts["6_fold"] += 1
                 self._hist_6_fold[bin_idx1] += 1
                 node.form = "6"
+                node.polyhedricity = m
                 if self.calculate_distribution:
                     # Distances center-vertices
                     for r in distances_cv:
