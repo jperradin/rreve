@@ -52,6 +52,8 @@ class PolyhedricityAnalyzer(BaseAnalyzer):
             "4_fold_a": 0,
             "5_fold_a": 0,
             "6_fold_a": 0,
+            "4_fold_a_cvn_ni": 0,
+            "4_fold_a_cvn_ffi": 0,
         }
 
         # POLYAnalysisSettings
@@ -142,6 +144,10 @@ class PolyhedricityAnalyzer(BaseAnalyzer):
             self._ad_5_fold = np.zeros(len(self._bins))
             self._ad_6_fold = np.zeros(len(self._bins))
 
+            # Angles center-vertex-neighbor
+            self._ad_4_fold_cvn_near_ideal = np.zeros(len(self._bins))
+            self._ad_4_fold_cvn_far_from_ideal = np.zeros(len(self._bins))
+
     def analyze(self, frame: Frame) -> None:
         self._initialize_arrays()
         self._atoms_data = frame.nodes_data.wrapped_positions
@@ -203,6 +209,7 @@ class PolyhedricityAnalyzer(BaseAnalyzer):
                 self.counts["4_fold"] += 1
                 node.form = "4"
                 node.polyhedricity = m
+                node.calculate_angles(lattice)
                 if self.calculate_distribution:
                     # Distances center-vertices
                     for r in distances_cv:
@@ -222,6 +229,15 @@ class PolyhedricityAnalyzer(BaseAnalyzer):
                         if bin_idx < max_bin:
                             self._ad_4_fold[bin_idx] += 1
                     self.counts_distribution["4_fold_a"] += len(angles)
+                    # Angles center-vertex-neighbor
+                    for a in node.angles:
+                        bin_idx = int(a / self._dbina) + 1
+                        if bin_idx < max_bin and m < 0.0045:
+                            self._ad_4_fold_cvn_near_ideal[bin_idx] += 1
+                            self.counts_distribution["4_fold_a_cvn_ni"] += 1
+                        if bin_idx < max_bin and m > 0.0045:
+                            self._ad_4_fold_cvn_far_from_ideal[bin_idx] += 1
+                            self.counts_distribution["4_fold_a_cvn_ffi"] += 1
 
             if node.coordination == 5:
                 if bin_idx1 >= max_bin:
@@ -305,6 +321,8 @@ class PolyhedricityAnalyzer(BaseAnalyzer):
         self.distribution_a["4_fold_a"] = self._ad_4_fold
         self.distribution_a["5_fold_a"] = self._ad_5_fold
         self.distribution_a["6_fold_a"] = self._ad_6_fold
+        self.distribution_a["4_fold_a_cvn_ni"] = self._ad_4_fold_cvn_near_ideal
+        self.distribution_a["4_fold_a_cvn_ffi"] = self._ad_4_fold_cvn_far_from_ideal
 
         self.poly_data.append(dict(self.polyhedricity))
         self.dist_cv_data.append(dict(self.distribution_cv))

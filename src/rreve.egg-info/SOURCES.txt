@@ -38,7 +38,6 @@ src/rreve/io/writer/__init__.py
 src/rreve/io/writer/base_writer.py
 src/rreve/io/writer/logs_writer.py
 src/rreve/io/writer/multiple_files_summary_writer.py
-src/rreve/io/writer/performance_writer.py
 src/rreve/io/writer/writer_factory.py
 src/rreve/io/writer/xyz_decorator.py
 src/rreve/utils/__init__.py

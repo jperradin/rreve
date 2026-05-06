@@ -12,9 +12,9 @@ config_general = c.GeneralSettings(
     project_name="example-SiO2",  # Project name
     export_directory="./examples/outputs/",  # Export directory
     file_location=path,  # File location
-    range_of_frames=(0, 1),  # Range of frames
+    range_of_frames=(0, 5),  # Range of frames
     apply_pbc=True,  # Apply periodic boundary conditions
-    verbose=True,  # Verbose mode (if True, print title, progress bars, etc.)
+    verbose=False,  # Verbose mode (if True, print title, progress bars, etc.)
     save_logs=True,  # Save logs    (save logs to export_directory/logs.txt)
     save_performance=True,  # Save performance (save performance data to export_directory/performance...json)
     decorate_input_file=True,
@@ -37,6 +37,7 @@ config_analysis = c.AnalysisSettings(
     with_all=False,
     with_polyhedricity=True,
     with_structural_units=True,
+    with_bond_angular_distribution=True,
 )
 
 # config_analysis.exclude_analyzer("neutron_structure_factor_fft")

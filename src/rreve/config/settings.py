@@ -668,7 +668,7 @@ class SettingsBuilder:
                 vertices_species="O",
                 max_c=0.2,
                 print_forms=False,
-                calculate_distributions=False,
+                calculate_distributions=True,
             )
             analysis.poly_settings = poly_settings
 

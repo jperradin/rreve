@@ -310,6 +310,21 @@ def calculate_pbc_dot_distances_combinations(
 
     return distances
 
+@njit(cache=True, fastmath=True)
+def calculate_pbc_angle_around(
+    self_pos: np.ndarray,
+    pos_batch_n1: np.ndarray,
+    pos_batch_n2: np.ndarray,
+    lattice: np.ndarray,
+) -> np.ndarray:
+    """Calculate PBC angles formed like : self - neighbor1 - neighbor2
+    
+    Args:
+        self_pos (np.ndarray): Position 
+        pos_batch_n1 (np.ndarray): Positions of first neighbors
+        pos_batch_n2 (np.ndarray): Positions of second neighbors
+        lattice (np.ndarray): The lattice matrix of the system (3x3)
+    """
 
 @njit(cache=True, fastmath=True)
 def calculate_pbc_angle_combinations(
