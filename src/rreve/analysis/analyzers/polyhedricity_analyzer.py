@@ -52,6 +52,7 @@ class PolyhedricityAnalyzer(BaseAnalyzer):
             "4_fold_a": 0,
             "5_fold_a": 0,
             "6_fold_a": 0,
+            "4_fold_a_cvn_vni": 0,
             "4_fold_a_cvn_ni": 0,
             "4_fold_a_cvn_ffi": 0,
         }
@@ -145,6 +146,7 @@ class PolyhedricityAnalyzer(BaseAnalyzer):
             self._ad_6_fold = np.zeros(len(self._bins))
 
             # Angles center-vertex-neighbor
+            self._ad_4_fold_cvn_very_near_ideal = np.zeros(len(self._bins))
             self._ad_4_fold_cvn_near_ideal = np.zeros(len(self._bins))
             self._ad_4_fold_cvn_far_from_ideal = np.zeros(len(self._bins))
 
@@ -232,6 +234,9 @@ class PolyhedricityAnalyzer(BaseAnalyzer):
                     # Angles center-vertex-neighbor
                     for a in node.angles:
                         bin_idx = int(a / self._dbina) + 1
+                        if bin_idx < max_bin and m < 0.003:
+                            self._ad_4_fold_cvn_very_near_ideal[bin_idx] += 1
+                            self.counts_distribution["4_fold_a_cvn_vni"] += 1
                         if bin_idx < max_bin and m < 0.0045:
                             self._ad_4_fold_cvn_near_ideal[bin_idx] += 1
                             self.counts_distribution["4_fold_a_cvn_ni"] += 1
@@ -362,10 +367,18 @@ class PolyhedricityAnalyzer(BaseAnalyzer):
                 # Use number of SiO5 to normalize.
                 if key == "5_fold_sbp" or key == "5_fold_tbp":
                     self.polyhedricity[key] = (
-                        np.sum(values, axis=0) / self.counts["5_fold"]
+                        np.sum(values, axis=0)
+                        / self.counts["5_fold"]
+                        / self._dbin
+                        / self.frame_processed_count
                     )
                 else:
-                    self.polyhedricity[key] = np.sum(values, axis=0) / self.counts[key]
+                    self.polyhedricity[key] = (
+                        np.sum(values, axis=0)
+                        / self.counts[key]
+                        / self._dbin
+                        / self.frame_processed_count
+                    )
                 if key not in ["5_fold_SBP", "5_fold_TBP"]:
                     self.proportion[key] = self.counts[key] / (
                         len(self.central_nodes) * self.frame_processed_count
@@ -385,7 +398,10 @@ class PolyhedricityAnalyzer(BaseAnalyzer):
                     if self.counts_distribution[key] == 0:
                         self.counts_distribution[key] = 1
                     self.distribution_cv[key] = (
-                        np.sum(values, axis=0) / self.counts_distribution[key]
+                        np.sum(values, axis=0)
+                        / self.counts_distribution[key]
+                        / self._dbincv
+                        / self.frame_processed_count
                     )
             if self.dist_vv_data:
                 keys = list(self.dist_vv_data[0].keys())
@@ -401,7 +417,10 @@ class PolyhedricityAnalyzer(BaseAnalyzer):
                     if self.counts_distribution[key] == 0:
                         self.counts_distribution[key] = 1
                     self.distribution_vv[key] = (
-                        np.sum(values, axis=0) / self.counts_distribution[key]
+                        np.sum(values, axis=0) 
+                        / self.counts_distribution[key]
+                        / self._dbinvv
+                        / self.frame_processed_count
                     )
             if self.dist_a_data:
                 keys = list(self.dist_a_data[0].keys())
@@ -417,7 +436,10 @@ class PolyhedricityAnalyzer(BaseAnalyzer):
                     if self.counts_distribution[key] == 0:
                         self.counts_distribution[key] = 1
                     self.distribution_a[key] = (
-                        np.sum(values, axis=0) / self.counts_distribution[key]
+                        np.sum(values, axis=0)
+                        / self.counts_distribution[key]
+                        / self._dbina
+                        / self.frame_processed_count
                     )
 
     def get_result(self) -> Dict[str, float]:
