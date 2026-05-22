@@ -395,6 +395,80 @@ def calculate_pbc_angle_combinations(
 
 
 @njit(cache=True, fastmath=True)
+def filter_neighbors_pbc_batch(
+    target: np.ndarray,
+    cands: np.ndarray,
+    lattice: np.ndarray,
+    inv_lattice: np.ndarray,
+    rcut2: np.ndarray,
+):
+    """Vectorized PBC-distance filter for one node against many candidates.
+
+    Args:
+        target (np.ndarray): (3,) cartesian position of the central node.
+        cands (np.ndarray): (M, 3) cartesian positions of candidates.
+        lattice (np.ndarray): (3, 3) lattice matrix.
+        inv_lattice (np.ndarray): (3, 3) precomputed inverse lattice.
+        rcut2 (np.ndarray): (M,) per-pair squared cutoff. Negative entries flag
+            invalid pairs and are skipped.
+
+    Returns:
+        keep (np.ndarray): (M,) bool mask of accepted candidates.
+        dists (np.ndarray): (M,) float64, distance for kept entries (0 elsewhere).
+    """
+    M = cands.shape[0]
+    keep = np.zeros(M, dtype=np.bool_)
+    dists = np.zeros(M, dtype=np.float64)
+    tx = target[0]; ty = target[1]; tz = target[2]
+    for i in range(M):
+        rc2 = rcut2[i]
+        if rc2 < 0.0:
+            continue
+        dx = cands[i, 0] - tx
+        dy = cands[i, 1] - ty
+        dz = cands[i, 2] - tz
+        # Row convention: frac = d @ inv_lattice, cart = frac @ lattice
+        fx = inv_lattice[0, 0] * dx + inv_lattice[1, 0] * dy + inv_lattice[2, 0] * dz
+        fy = inv_lattice[0, 1] * dx + inv_lattice[1, 1] * dy + inv_lattice[2, 1] * dz
+        fz = inv_lattice[0, 2] * dx + inv_lattice[1, 2] * dy + inv_lattice[2, 2] * dz
+        fx -= np.round(fx); fy -= np.round(fy); fz -= np.round(fz)
+        mx = lattice[0, 0] * fx + lattice[1, 0] * fy + lattice[2, 0] * fz
+        my = lattice[0, 1] * fx + lattice[1, 1] * fy + lattice[2, 1] * fz
+        mz = lattice[0, 2] * fx + lattice[1, 2] * fy + lattice[2, 2] * fz
+        d2 = mx * mx + my * my + mz * mz
+        if d2 <= rc2:
+            keep[i] = True
+            dists[i] = np.sqrt(d2)
+    return keep, dists
+
+
+@njit(cache=True, fastmath=True)
+def filter_neighbors_direct_batch(
+    target: np.ndarray,
+    cands: np.ndarray,
+    rcut2: np.ndarray,
+):
+    """Vectorized direct-distance (no PBC) filter, same contract as
+    ``filter_neighbors_pbc_batch``."""
+    M = cands.shape[0]
+    keep = np.zeros(M, dtype=np.bool_)
+    dists = np.zeros(M, dtype=np.float64)
+    tx = target[0]; ty = target[1]; tz = target[2]
+    for i in range(M):
+        rc2 = rcut2[i]
+        if rc2 < 0.0:
+            continue
+        dx = cands[i, 0] - tx
+        dy = cands[i, 1] - ty
+        dz = cands[i, 2] - tz
+        d2 = dx * dx + dy * dy + dz * dz
+        if d2 <= rc2:
+            keep[i] = True
+            dists[i] = np.sqrt(d2)
+    return keep, dists
+
+
+@njit(cache=True, fastmath=True)
 def fast_histogram(distances: np.ndarray, r_max: float, bins: int) -> np.ndarray:
     """Fast histogram calculation using numba."""
     hist = np.zeros(bins, dtype=np.int64)
@@ -438,6 +512,87 @@ def calculate_tetrahedricity(distances: np.ndarray) -> float:
     tetrahedricity = tetrahedricity / (15 * mean_sqr_distance)
 
     return tetrahedricity
+
+
+@njit(cache=True, fastmath=True)
+def calculate_pbc_cv_angle_combinations(
+    center_pos: np.ndarray,
+    pos_batch: np.ndarray,
+    lattice: np.ndarray,
+) -> np.ndarray:
+    """Calculate PBC vertex-center-vertex angles (apex at center).
+
+    For each unique pair of vertices, return the angle vertex_i - center - vertex_j.
+
+    Args:
+        center_pos (np.ndarray): Position of the central atom (apex of the angle)
+        pos_batch (np.ndarray): Positions of the vertices
+        lattice (np.ndarray): The lattice matrix of the system (3x3)
+
+    Returns:
+        np.ndarray: All vertex-center-vertex angles in degrees
+    """
+    n_atoms = pos_batch.shape[0]
+    inv_lattice = np.linalg.inv(lattice)
+
+    num_combinations = n_atoms * (n_atoms - 1) // 2
+    angles = np.empty(num_combinations, dtype=np.float64)
+
+    k = 0
+    for i in range(n_atoms):
+        for j in range(i + 1, n_atoms):
+            # Displacement vectors (center -> vertex)
+            direct_disp1 = pos_batch[i] - center_pos
+            direct_disp2 = pos_batch[j] - center_pos
+
+            frac_disp1 = inv_lattice @ direct_disp1
+            frac_disp2 = inv_lattice @ direct_disp2
+
+            frac_disp1 -= np.round(frac_disp1)
+            frac_disp2 -= np.round(frac_disp2)
+
+            min_disp1 = frac_disp1 @ lattice
+            min_disp2 = frac_disp2 @ lattice
+
+            dot_product = np.dot(min_disp1, min_disp2)
+            norm1 = np.linalg.norm(min_disp1)
+            norm2 = np.linalg.norm(min_disp2)
+
+            if norm1 > 1e-12 and norm2 > 1e-12:
+                cos_angle = dot_product / (norm1 * norm2)
+                if cos_angle > 1.0:
+                    cos_angle = 1.0
+                elif cos_angle < -1.0:
+                    cos_angle = -1.0
+                angles[k] = np.degrees(np.arccos(cos_angle))
+            else:
+                angles[k] = np.nan
+
+            k += 1
+
+    return angles
+
+
+@njit(nogil=True, cache=True, fastmath=True)
+def calculate_tetrahedricity_angles(angles: np.ndarray, ideal_angle: float) -> float:
+    """Irregularity of a tetrahedron from a set of angles vs an ideal angle.
+
+    Mean squared relative deviation from the ideal angle (dimensionless), so a
+    perfectly regular tetrahedron gives 0.
+
+    Args:
+        angles (np.ndarray): Angles in degrees (vertex-center-vertex or
+            vertex-vertex-vertex)
+        ideal_angle (float): Ideal angle in degrees (~109.47 for v-c-v, 60 for v-v-v)
+
+    Returns:
+        float: The angular irregularity
+    """
+    irregularity = 0.0
+    for a in angles:
+        irregularity += ((a - ideal_angle) / ideal_angle) ** 2
+    irregularity = irregularity / len(angles)
+    return irregularity
 
 
 @njit(nogil=True, cache=True, fastmath=True)
@@ -516,7 +671,7 @@ def warmup_jit():
     # progress bar
     progress_bar = tqdm(
         desc="Compiling jitted functions ...",
-        total=17,
+        total=21,
         colour="magenta",
         ascii=True,
         leave=True,
@@ -546,9 +701,23 @@ def warmup_jit():
     progress_bar.update(1)
     fast_histogram(np.array([1.0, 2.0, 3.0]), 10.0, 10)
     progress_bar.update(1)
+    dummy_inv_lattice = np.linalg.inv(dummy_lattice)
+    dummy_rcut2 = np.array([4.0, 4.0, 4.0])
+    filter_neighbors_pbc_batch(
+        dummy_pos1, dummy_positions, dummy_lattice, dummy_inv_lattice, dummy_rcut2
+    )
+    progress_bar.update(1)
+    filter_neighbors_direct_batch(dummy_pos1, dummy_positions, dummy_rcut2)
+    progress_bar.update(1)
     calculate_components(dummy_q, dummy_q, dummy_q, dummy_positions, None)
     progress_bar.update(1)
     calculate_tetrahedricity(distances)
+    progress_bar.update(1)
+    cv_angles = calculate_pbc_cv_angle_combinations(
+        dummy_positions[0], dummy_positions, dummy_lattice
+    )
+    progress_bar.update(1)
+    calculate_tetrahedricity_angles(cv_angles, 109.47)
     progress_bar.update(1)
     calculate_square_based_pyramid(distances)
     progress_bar.update(1)
@@ -570,8 +739,12 @@ __all__ = [
     "calculate_pbc_distances_batch",
     "calculate_pbc_dot_distances_combinations",
     "fast_histogram",
+    "filter_neighbors_pbc_batch",
+    "filter_neighbors_direct_batch",
     "calculate_components",
     "calculate_tetrahedricity",
+    "calculate_pbc_cv_angle_combinations",
+    "calculate_tetrahedricity_angles",
     "calculate_square_based_pyramid",
     "calculate_triangular_bipyramid",
     "calculate_octahedricity",

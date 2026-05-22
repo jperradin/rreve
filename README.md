@@ -42,6 +42,7 @@ ____/\\\\\\\\\________/\\\\\\\\\________________________________________________
   * **Pair Distribution Function (PDF)**: Calculates the radial pair distribution function, `g(r)`.
   * **Polyhedricity Analysis**: Quantifies the polyhedricity of local atomic environments.
   * **Structural Units Analysis**: Identifies and characterizes specific structural units within the material.
+  * **Tetrahedricity Analysis**: Measures the irregularity of tetrahedra (4-fold units) versus a regular form, via vertex-vertex distances, vertex-center-vertex angles (~109.47°), and vertex-vertex-vertex angles (60°).
 
 -----
 

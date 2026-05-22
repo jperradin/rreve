@@ -13,6 +13,7 @@ from .io.reader.reader_factory import ReaderFactory
 from .core.system import System
 from .analysis.analyzer_factory import AnalyzerFactory
 from .analysis.neighbor_searcher import NeighborSearcher
+from .analysis.fast_neighbor_searcher import FastNeighborSearcher
 from .io.writer.writer_factory import WriterFactory
 from .utils import *
 from .version import __version__
@@ -132,7 +133,10 @@ def main(settings: Settings):
         frame.initialize_nodes()
         # Find neighbors
         neighbor_start = time.time()
-        searcher = NeighborSearcher(frame, settings)
+        if getattr(settings, "use_fast_neighbor_search", True):
+            searcher = FastNeighborSearcher(frame, settings)
+        else:
+            searcher = NeighborSearcher(frame, settings)
         searcher.execute()
         neighbor_end = time.time()
         neighbor_times.append((neighbor_end - neighbor_start) * 1000)

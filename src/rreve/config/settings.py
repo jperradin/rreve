@@ -94,6 +94,30 @@ class POLYAnalysisSettings:
 
 
 @dataclass
+class TETRAAnalysisSettings:
+    """Settings specific to the TetrahedricityAnalyzer"""
+
+    central_species: str = ""
+    vertices_species: str = ""
+    max_c: float = 0.1
+    ideal_cv_angle: float = 109.47
+    ideal_vvv_angle: float = 60.0
+    print_forms: bool = True
+    calculate_distributions: bool = True
+
+    def __str__(self) -> str:
+        line = "\t\t  |- tetra_settings:\n"
+        line += f"\t\t    |- central_species = {self.central_species}\n"
+        line += f"\t\t    |- vertices_species = {self.vertices_species}\n"
+        line += f"\t\t    |- max_c = {self.max_c}\n"
+        line += f"\t\t    |- ideal_cv_angle = {self.ideal_cv_angle}\n"
+        line += f"\t\t    |- ideal_vvv_angle = {self.ideal_vvv_angle}\n"
+        line += f"\t\t    |- print_forms = {self.print_forms}\n"
+        line += f"\t\t    |- calculate_distributions = {self.calculate_distributions}"
+        return line
+
+
+@dataclass
 class Cutoff:
     """
     Cutoff that contains all the cutoffs.
@@ -146,6 +170,8 @@ class GeneralSettings:
     cutoffs: List[Cutoff] = field(default_factory=lambda: [])
     # Coordination mode
     coordination_mode: str = "all_types"
+    # Whether to use the optimized fast neighbor searcher
+    use_fast_neighbor_search: bool = True
 
 
 @dataclass
@@ -198,6 +224,9 @@ class AnalysisSettings:
     # Whether to calculate the polyhedricity
     with_polyhedricity: bool = False
     poly_settings: Optional["POLYAnalysisSettings"] = None
+    # Whether to calculate the tetrahedricity
+    with_tetrahedricity: bool = False
+    tetra_settings: Optional["TETRAAnalysisSettings"] = None
 
     def __post_init__(self):
         """Post-initialization to handle with_all logic and exclusions."""
@@ -213,6 +242,7 @@ class AnalysisSettings:
             "structural_units": "with_structural_units",
             "connectivity": "with_connectivity",
             "polyhedricity": "with_polyhedricity",
+            "tetrahedricity": "with_tetrahedricity",
         }
 
         for analyzer_key, attribute_name in analyzer_mapping.items():
@@ -236,6 +266,7 @@ class AnalysisSettings:
             "structural_units": self.with_structural_units,
             "connectivity": self.with_connectivity,
             "polyhedricity": self.with_polyhedricity,
+            "tetrahedricity": self.with_tetrahedricity,
         }
 
         if self.with_all:
@@ -264,6 +295,7 @@ class AnalysisSettings:
                 "structural_units": "with_structural_units",
                 "connectivity": "with_connectivity",
                 "polyhedricity": "with_polyhedricity",
+                "tetrahedricity": "with_tetrahedricity",
             }
 
             if analyzer_name in analyzer_mapping:
@@ -292,6 +324,7 @@ class AnalysisSettings:
                 "structural_units": "with_structural_units",
                 "connectivity": "with_connectivity",
                 "polyhedricity": "with_polyhedricity",
+                "tetrahedricity": "with_tetrahedricity",
             }
 
             if analyzer_name in analyzer_mapping:
@@ -325,6 +358,9 @@ class AnalysisSettings:
 
         if self.is_analyzer_enabled("polyhedricity"):
             analyzers.append("PolyhedricityAnalyzer")
+
+        if self.is_analyzer_enabled("tetrahedricity"):
+            analyzers.append("TetrahedricityAnalyzer")
 
         return analyzers
 
@@ -375,6 +411,10 @@ class AnalysisSettings:
                     key == "with_polyhedricity" or key == "poly_settings"
                 ):
                     continue
+                if not self.is_analyzer_enabled("tetrahedricity") and (
+                    key == "with_tetrahedricity" or key == "tetra_settings"
+                ):
+                    continue
                 if (
                     self.is_analyzer_enabled("pair_distribution_function")
                 ) and key == "pdf_settings":
@@ -404,6 +444,11 @@ class AnalysisSettings:
                     self.is_analyzer_enabled("polyhedricity")
                 ) and key == "poly_settings":
                     lines.append(str(self.poly_settings))
+                    continue
+                if (
+                    self.is_analyzer_enabled("tetrahedricity")
+                ) and key == "tetra_settings":
+                    lines.append(str(self.tetra_settings))
                     continue
 
                 lines.append(f"\t\t|- {key}: {value}")
@@ -496,6 +541,7 @@ class Settings:
     save_performance: bool = False
     decorate_input_file: bool = False # NOTE: beta features works only with extended XYZ file format.
     coordination_mode: str = "all_types"
+    use_fast_neighbor_search: bool = True
     general: GeneralSettings = field(default_factory=GeneralSettings)
     cutoffs: List[Cutoff] = field(default_factory=lambda: [])
     lattice: LatticeSettings = field(default_factory=LatticeSettings)
@@ -584,6 +630,7 @@ class SettingsBuilder:
         self._settings.apply_pbc = general.apply_pbc
         self._settings.cutoffs = general.cutoffs
         self._settings.coordination_mode = general.coordination_mode
+        self._settings.use_fast_neighbor_search = general.use_fast_neighbor_search
         if general.verbose is not None:
             self._settings.verbose = general.verbose
         if general.save_logs is not None:
@@ -672,6 +719,22 @@ class SettingsBuilder:
             )
             analysis.poly_settings = poly_settings
 
+        if (
+            analysis.is_analyzer_enabled("tetrahedricity")
+            and analysis.tetra_settings is None
+        ):
+            # Create a TETRAAnalysisSettings object if not created
+            tetra_settings = TETRAAnalysisSettings(
+                central_species="Si",
+                vertices_species="O",
+                max_c=0.2,
+                ideal_cv_angle=109.47,
+                ideal_vvv_angle=60.0,
+                print_forms=False,
+                calculate_distributions=True,
+            )
+            analysis.tetra_settings = tetra_settings
+
         self._settings.analysis = analysis
         return self
 
@@ -692,4 +755,5 @@ __all__ = [
     STRUNITSAnalysisSettings,
     CONNAnalysisSettings,
     POLYAnalysisSettings,
+    TETRAAnalysisSettings,
 ]

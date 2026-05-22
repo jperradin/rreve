@@ -15,6 +15,7 @@ from .analyzers.bond_angular_distribution_analyzer import (
 from .analyzers.structural_units_analyzer import StructuralUnitsAnalyzer
 from .analyzers.connectivity_analyzer import ConnectivityAnalyzer
 from .analyzers.polyhedricity_analyzer import PolyhedricityAnalyzer
+from .analyzers.tetrahedricity_analyzer import TetrahedricityAnalyzer
 
 
 class AnalyzerFactory:
@@ -28,6 +29,7 @@ class AnalyzerFactory:
         self.register_analyzer(StructuralUnitsAnalyzer(settings))
         self.register_analyzer(ConnectivityAnalyzer(settings))
         self.register_analyzer(PolyhedricityAnalyzer(settings))
+        self.register_analyzer(TetrahedricityAnalyzer(settings))
 
     def register_analyzer(self, analyzer: BaseAnalyzer) -> None:
         self._analyzers[analyzer.__class__.__name__] = analyzer
