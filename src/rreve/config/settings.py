@@ -100,8 +100,12 @@ class TETRAAnalysisSettings:
     central_species: str = ""
     vertices_species: str = ""
     max_c: float = 0.1
-    ideal_cv_angle: float = 109.47
+    ideal_vcv_angle: float = 109.47
     ideal_vvv_angle: float = 60.0
+    dcv_max: float = 3.0
+    dvv_max: float = 5.0
+    q_min: float = -0.5
+    q_max: float = 1.0
     print_forms: bool = True
     calculate_distributions: bool = True
 
@@ -110,8 +114,12 @@ class TETRAAnalysisSettings:
         line += f"\t\t    |- central_species = {self.central_species}\n"
         line += f"\t\t    |- vertices_species = {self.vertices_species}\n"
         line += f"\t\t    |- max_c = {self.max_c}\n"
-        line += f"\t\t    |- ideal_cv_angle = {self.ideal_cv_angle}\n"
+        line += f"\t\t    |- ideal_vcv_angle = {self.ideal_vcv_angle}\n"
         line += f"\t\t    |- ideal_vvv_angle = {self.ideal_vvv_angle}\n"
+        line += f"\t\t    |- dcv_max = {self.dcv_max}\n"
+        line += f"\t\t    |- dvv_max = {self.dvv_max}\n"
+        line += f"\t\t    |- q_min = {self.q_min}\n"
+        line += f"\t\t    |- q_max = {self.q_max}\n"
         line += f"\t\t    |- print_forms = {self.print_forms}\n"
         line += f"\t\t    |- calculate_distributions = {self.calculate_distributions}"
         return line
@@ -728,8 +736,12 @@ class SettingsBuilder:
                 central_species="Si",
                 vertices_species="O",
                 max_c=0.2,
-                ideal_cv_angle=109.47,
+                ideal_vcv_angle=109.47,
                 ideal_vvv_angle=60.0,
+                dcv_max=3.0,
+                dvv_max=5.0,
+                q_min=-0.5,
+                q_max=1.0,
                 print_forms=False,
                 calculate_distributions=True,
             )

@@ -1,29 +1,62 @@
-from ...config.settings import Settings
-from ...io.writer.base_writer import BaseWriter
-from ...core.frame import Frame
-
 import os
+from typing import List
+
+from ...config.settings import Settings
+from ...core.frame import Frame
+from ...core.node import Node
+from ...io.writer.base_writer import BaseWriter
+
 
 class XYZDecorator(BaseWriter):
-    def __init__(self, settings:Settings) -> None:
+    """Append-mode extended-XYZ writer that decorates each frame with per-atom
+    analysis outputs: coordination, polyhedricity, and particle index."""
+
+    PROPERTIES = (
+        "species:S:1:"
+        "particle_index:I:1:"
+        "pos:R:3:"
+        "coordination:I:1:"
+        "polyhedricity:R:1"
+    )
+
+    def __init__(self, settings: Settings) -> None:
         super().__init__(settings)
         self._settings: Settings = settings
 
-        self._source_file = self._settings.file_location.split('/')[-1]
-        self._export_directory = os.path.join(self._settings.export_directory, 'decorated_input_files') 
-        self._destination_file = os.path.join(self._export_directory, self._source_file)
-        self._mode = 'a'
+        self._source_file = os.path.basename(self._settings.file_location)
+        self._export_directory = os.path.join(
+            self._settings.export_directory, "decorated_input_files"
+        )
+        self._destination_file = os.path.join(
+            self._export_directory, self._source_file
+        )
+        self._mode = "a"
 
-    def write(self, f:Frame) -> None:
+        os.makedirs(self._export_directory, exist_ok=True)
 
-        _num_nodes = f.get_num_nodes()
-        _lattice = f._lattice_str
-        _nodes = f.get_nodes()
+    def write(self, frame: Frame) -> None:
+        num_nodes = frame.get_num_nodes()
+        lattice_str = frame._lattice_str
+        nodes = frame.get_nodes()
 
-        # properties output
-        # Symbol X Y Z Coordination Polyhedricity
-        with open(self._destination_file, self._mode) as o:
-            o.write(f"{_num_nodes}\n")
-            o.write(f"Lattice=\"{_lattice}\" Properties=species:S:1:pos:R:3:coordination:I:1:polyhedricity:R:1\n")
-            for n in _nodes:
-                o.write(f"{n.symbol}\t{n.position[0]}\t{n.position[1]}\t{n.position[2]}\t{n.coordination}\t{n.polyhedricity}\n")
+        with open(self._destination_file, self._mode) as f:
+            f.write(self._header(num_nodes, lattice_str))
+            for node in nodes:
+                f.write(self._format_row(node))
+
+    def _header(self, num_nodes: int, lattice_str: str) -> str:
+        return (
+            f"{num_nodes}\n"
+            f'Lattice="{lattice_str}" Properties={self.PROPERTIES}\n'
+        )
+
+    @staticmethod
+    def _format_row(node: Node) -> str:
+        x, y, z = node.position
+        return (
+            f"{node.symbol}\t"
+            f"{node.node_id}\t"
+            f"{x:.6f}\t{y:.6f}\t{z:.6f}\t"
+            f"{node.coordination}\t"
+            f"{node.polyhedricity}\n"
+        )

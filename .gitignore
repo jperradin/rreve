@@ -1,3 +1,8 @@
 __pycache__/
 reve.egg-info/
 performance_*
+
+# Test coverage
+.coverage
+htmlcov/
+.pytest_cache/

@@ -596,6 +596,47 @@ def calculate_tetrahedricity_angles(angles: np.ndarray, ideal_angle: float) -> f
 
 
 @njit(nogil=True, cache=True, fastmath=True)
+def calculate_errington_q(angles: np.ndarray, ideal_angle: float) -> float:
+    """Errington-Debenedetti tetrahedral order parameter q.
+
+    Generalized form of the orientational order parameter of Errington &
+    Debenedetti, Nature 409, 318-321 (2001) (itself a rescaling of Chau &
+    Hardwick, Mol. Phys. 93, 511 (1998)):
+
+        q = 1 - prefactor * sum_jk (cos(angle_jk) - cos(ideal_angle))^2
+
+    The prefactor is self-normalizing so that q -> 1 for a perfect tetrahedron
+    (every angle == ideal_angle) and <q> -> 0 for randomly oriented neighbours.
+    For a sin-weighted random angle distribution <cos> = 0 and <cos^2> = 1/3, so
+    <(cos - cos_ideal)^2> = 1/3 + cos_ideal^2 and the normalization over ``n``
+    angles is prefactor = 1 / (n * (1/3 + cos_ideal^2)).
+
+    This reproduces the published constants:
+      * O-Si-O apex set: n = 6, ideal = 109.47 deg (cos = -1/3) -> prefactor 3/8
+        (the original Errington-Debenedetti water q).
+      * O-O-O vertex set: n = 12, ideal = 60 deg (cos = 1/2) -> prefactor 1/7
+        (adaptation for the vertex-vertex-vertex angles of a SiO4 tetrahedron).
+
+    Args:
+        angles (np.ndarray): Angles in degrees (vertex-center-vertex or
+            vertex-vertex-vertex).
+        ideal_angle (float): Ideal angle in degrees (109.47 for O-Si-O, 60 for
+            O-O-O).
+
+    Returns:
+        float: The order parameter q (1 = perfect tetrahedron, 0 = random).
+    """
+    cos_ideal = np.cos(np.radians(ideal_angle))
+    n = len(angles)
+    prefactor = 1.0 / (n * (1.0 / 3.0 + cos_ideal * cos_ideal))
+    s = 0.0
+    for a in angles:
+        c = np.cos(np.radians(a))
+        s += (c - cos_ideal) ** 2
+    return 1.0 - prefactor * s
+
+
+@njit(nogil=True, cache=True, fastmath=True)
 def calculate_square_based_pyramid(distances: np.ndarray) -> float:
     _distances = np.copy(distances)
     _distances[-2] /= np.sqrt(2)
@@ -719,11 +760,15 @@ def warmup_jit():
     progress_bar.update(1)
     calculate_tetrahedricity_angles(cv_angles, 109.47)
     progress_bar.update(1)
-    calculate_square_based_pyramid(distances)
+    # These polyhedricity metrics index the last 2-4 elements of the distance
+    # vector (a 5-vertex pyramid has 10 edges, a 6-vertex octahedron 15), so warm
+    # them up with a correctly sized dummy rather than the 3-element ``distances``.
+    dummy_poly_distances = np.array([1.0, 1.1, 1.2, 1.3, 1.4, 1.5])
+    calculate_square_based_pyramid(dummy_poly_distances)
     progress_bar.update(1)
-    calculate_triangular_bipyramid(distances)
+    calculate_triangular_bipyramid(dummy_poly_distances)
     progress_bar.update(1)
-    calculate_octahedricity(distances)
+    calculate_octahedricity(dummy_poly_distances)
     progress_bar.update(1)
     progress_bar.close()
 
